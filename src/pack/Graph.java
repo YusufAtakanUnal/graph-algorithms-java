@@ -1,6 +1,6 @@
 package pack;
-
 import java.util.*;
+
 //-----------------------------------------------------
 // Title: Graph Class
 // Author: Yusuf Atakan Ünal
@@ -10,18 +10,33 @@ import java.util.*;
 // Description:In this class, we define what the structure of the graph contains,
 // all graph methods and the main function
 //-----------------------------------------------------
-public class Graph {
-    private int vertex;
-    private List<Character>[] adj;
-    private char startingVertex, endingVertex;
-
-    public Graph(int vertex, int edges) {
+	public class Graph {
+    public int vertex;
+    public List<Character>[] adj;
+    
+    public boolean[] marked;
+    public char[] edgeTo;
+    public int[] distTo;
+	private char startingVertex;
+	//-----------------------------------------------------
+	// Summary:vertex holds the number of nodes of the graph.adj holds the list of 
+	// adjacency nodes to which each node is connected."marked" is an array that holds
+	// the nodes traversed during the breadth first search."edgeTo" holds which node we traverse
+	// to reach a node."distTo" holds the distance to reach each node as an integer. 
+	//-----------------------------------------------------
+    public Graph(int vertex) {
         this.vertex = vertex;
         
-        adj = new ArrayList[26];
+        adj = new ArrayList[26];  
         for (int i = 0; i < 26; i++) {
+        	
             adj[i] = new ArrayList<>();
+            
         }
+        
+        marked = new boolean[26];  
+        distTo = new int[26];  
+        edgeTo = new char[26];  
     }
     
     public void addEdge(char v, char w) {
@@ -35,176 +50,200 @@ public class Graph {
         adj[v - 'a'].add(w);
         adj[w - 'a'].add(v);
     }
-    
-    
-    public void removeElementFromList(List<Character> list, char element) {
+
+    public List<Character> findAdj(char vertex) {
     	//--------------------------------------------------------
-    	// Summary: This method allows a given element (vertex) to be deleted from the neighbourhood list. 
-    	// First, the index at which the element (vertex) appears in the list is determined, and then 
-    	// the element is removed from the list. This is particularly useful when temporarily added edges need to be undone, 
-    	// so that the effect of the changes is temporary and the original graph structure is preserved.
-    	// Precondition: "list" denotes a list containing elements of type Character. "element" is char.
-    	// Postcondition:The specified element has been removed from the list, if it exists. 
-    	// If the element is not found in the list, the list remains unchanged.
+    	// Summary: This is a method that returns the neighbours in the adj list for that vertex.
+    	// Precondition: "vertex" is a char.
+    	// Postcondition: Returns the list of adjacent vertices for the given vertex.
     	//--------------------------------------------------------
-    	int index = -1;
-    	
-    	for (int i = 0; i < list.size(); i++) {
-    		
-    		if (list.get(i) == element) {
-    			
-    			index = i;
-    			break;
-    			
-    		}
+    	int vertexIndex = vertex - 'a';
+    	return adj[vertexIndex];
+    }
+    
+    public void bfs(Graph G, char startingVertex) {
+ 
+    	 //--------------------------------------------------------
+    	 // Summary: is a function that applies the Breadth-First Search (BFS) algorithm starting from 
+    	 // the starting vertex. First, all nodes are assumed to be unvisited (marked array is set to false),
+    	 // distances (distTo) and previous node information (edgeTo) are reset to zero. 
+    	 // Then, the start node is added to a queue, its distance is set to 0 and BFS is initialised. 
+    	 // Each node is removed from the queue and its neighbours are visited. 
+    	 // If the neighbour has not been visited before, the neighbour is added to the queue, 
+    	 // its distance is increased by one and the node from which it came is recorded. 
+    	 // This process continues until all nodes have been visited. Thus, the shortest distance 
+    	 // and path information of each node is obtained.
+    	 // Precondition: G is a graph and startingVertex is a char
+    	 // Postcondition: All neighbours of all vertexes were visited and all neighbours were added to the queue.
+    	 //--------------------------------------------------------
+    	for (int i = 0; i < marked.length; i++) {
+    	    marked[i] = false;
     	}
     	
-    	if (index != -1) {
-    		
-    		list.remove(index);
-    		
+    	for (int i = 0; i < distTo.length; i++) {
+    	    distTo[i] = -1;
     	}
-    }
-    public int[] findShortestPaths(char source) {
-    	//--------------------------------------------------------
-    	// Summary:  This method uses the Breadth-First Search (BFS) algorithm to find the shortest distances 
-    	// from a given starting vertex to all other vertices. Initially, all distances are set to -1,
-    	// then starting from the initial vertex, all neighbours are reached in a queue and the distances are updated.
-    	// To find the shortest distance to each vertex, this algorithm calculates the distances in the 
-    	// order of travelling and adds them to the queue.
-    	// Precondition: source is a char
-    	// Postcondition: Returns an array of integers representing the shortest distances from the given 
-    	// source vertex to all other vertices in the graph, with -1 indicating that a vertex is not reachable from the source.
-    	//--------------------------------------------------------
     	
-        int[] distances = new int[26]; 
-        
-        for(int i = 0; i <distances.length;i++) {
-        	
-        	distances[i] = -1;
-        	
+        for (int i = 0; i < edgeTo.length; i++) {
+            edgeTo[i] = '\0';
         }
 
-        char[] list = new char[26];
-        int firstIndex = 0;
-        int lastIndex = 0;
-        list[lastIndex++] = source;
-        distances[source - 'a'] = 0;
-        
-        
-        while(firstIndex < lastIndex) {
+        Queue<Character> q = new LinkedList<>();
+        q.add(startingVertex);
+        marked[startingVertex - 'a'] = true;
+        distTo[startingVertex - 'a'] = 0; 
+
+        while (!q.isEmpty()) {
         	
-        	char current = list[firstIndex++];
-	
-        	for(int i = 0;i<adj[current - 'a'].size();i++) {
-        		
-        		char connectedVertex = adj[current - 'a'].get(i);
-        		
-        		if(distances[connectedVertex - 'a']==-1) {
-			
-			distances[connectedVertex -'a'] = distances[current - 'a'] +1;
-			list[lastIndex++] = connectedVertex;
-		}
-        }
-        }
-
-        return distances;
-    }
-
-    
-    public void findNewConnections() {
-    	//--------------------------------------------------------
-    	// Summary:  This method checks whether new edges can be added to the neighbourhood list of the graph 
-    	// while preserving the current shortest path distance. First, the current distance between the given 
-    	// start and goal vertex is calculated. Then, all vertex pairs are checked and if there is no existing 
-    	// edge between two vertex pairs, a temporary edge is added between these two vertex pairs. After adding 
-    	// the new edge, the distance is checked again by running BFS; if the distance does not change, the new 
-    	// connection is considered valid and added to the list. Finally, valid connections are printed, or -1 is
-    	// returned if no valid connections are found
-    	// Postcondition:Identifies and prints all new valid edges that can be added to the graph without changing
-    	// the shortest path distance between the given starting and ending vertices. If no valid connections are found,
-    	// it prints -1.
-    	//--------------------------------------------------------
-        int[] shortestDistances = findShortestPaths(startingVertex);
-        int initialDistance = shortestDistances[endingVertex - 'a'];
-
-        if (initialDistance == -1) {
-        	
-            System.out.println("-1");  
-            return;
+            char v = q.poll();
+            List<Character> adjList = G.findAdj(v); 
             
-        }
-
-        List<String> validConnections = new ArrayList<>();
-
-    
-        for (char firstVertex = 'a'; firstVertex < 'a' + vertex; firstVertex++) {
-        	
-            for (char secondVertex = (char) (firstVertex + 1); secondVertex < 'a' + vertex; secondVertex++) {
+            for (int i = 0; i < adjList.size(); i++) {  
             	
-                if (!adj[firstVertex - 'a'].contains(secondVertex)) {
+                char w = adjList.get(i);  
+                if (!marked[w - 'a']) {
                 	
-                   
-                    adj[firstVertex - 'a'].add(secondVertex);
-                    adj[secondVertex - 'a'].add(firstVertex);
-
+                    q.add(w);
+                    marked[w - 'a'] = true;
+                    edgeTo[w - 'a'] = v;  
+                    distTo[w - 'a'] = distTo[v - 'a'] + 1;  
                     
-                    int[] updatedDistances = findShortestPaths(startingVertex);
-
-                    
-                    if (updatedDistances[endingVertex - 'a'] == initialDistance) {
-                    	
-                        validConnections.add(firstVertex + " " + secondVertex);  
-                        
-                    }
-
-                    removeElementFromList(adj[firstVertex - 'a'], secondVertex);
-                    removeElementFromList(adj[secondVertex - 'a'], firstVertex);
                 }
             }
         }
+    }	
+    
 
-        
-        if (validConnections.size() == 0) {
+    
+    public List<Character> getPath(char startingVertex, char endingVertex) {
+    	//--------------------------------------------------------
+    	// Summary: The purpose of this method is to retrace the shortest path between the 
+    	// startingVertex and the endingVertex found with the Breadth-First Search (BFS)
+    	// algorithm and return this path as a list.In other words, we obtain a path using the 
+    	// path information found with BFS.
+    	// Precondition: "startingVertex" is a char and "endingVertex" is a char.
+    	// Postcondition: Returns the list of vertices representing the shortest path from the starting vertex
+    	// to the ending vertex, with the vertices in the correct order from start to end.
+    	//--------------------------------------------------------
+        List<Character> path = new ArrayList<>();
+        char v = endingVertex;
+        if (distTo[endingVertex - 'a'] == -1) {
         	
-            System.out.println("-1");  
+            return path; 
             
-        } else {
-            System.out.println(validConnections.size());
-            for (String connection : validConnections) {
+        }
+        
+        while (v != startingVertex) {
+        	
+            path.add(v);
+            v = edgeTo[v - 'a'];
+            
+        }
+        path.add(startingVertex);
+        Collections.reverse(path);
+        return path;
+    }
+    
+    public static void printPath(List<Character> path) {
+    	//--------------------------------------------------------
+    	// Summary:The printPath method is used to print the path list returned from the getPath method to the screen. 
+    	// This list contains the shortest path from one vertex to another, and each vertex is separated by a space.
+    	// Precondition: The path is a list of Characters.
+    	// Postcondition: Returns the list of adjacent vertices for the given vertex, 
+    	// representing all the vertices directly connected to the specified vertex.
+    	//--------------------------------------------------------
+        for (int i = 0; i < path.size(); i++) {
+        	
+            System.out.print(path.get(i));
+            
+            if (i < path.size() - 1) {
             	
-                System.out.println(connection);
+                System.out.print(" ");
                 
             }
         }
     }
+
     
     public static void main(String[] args) {
-    	//--------------------------------------------------------
-    	// Summary: main is the entry point of the programme and creates a Graph object with the 
-    	// data entered by the user. After receiving the number of nodes and paths from the user,
-    	// the edges of the graph are added with the addEdge method for each path. Then, the start
-    	// and destination vertexes are determined and the findNewConnections method is run to check
-    	// whether new connections can be added. This method finds new connections that fit the current
-    	// structure of the graph and provides the output to the user.
-    	//--------------------------------------------------------
+        
         Scanner scanner = new Scanner(System.in);
+
+        
         int numberOfLandmarks = scanner.nextInt();
         int numberOfRoads = scanner.nextInt();
-        Graph graph = new Graph(numberOfLandmarks, numberOfRoads);
+        
+        
+        Graph graph = new Graph(numberOfLandmarks);
+
 
         for (int i = 0; i < numberOfRoads; i++) {
         	
+        	// We get two vertex  from the user and add a path between them
             char firstVertex = scanner.next().charAt(0);
             char secondVertex = scanner.next().charAt(0);
-            graph.addEdge(firstVertex, secondVertex);
+            graph.addEdge(firstVertex, secondVertex); 
             
         }
 
-        graph.startingVertex = scanner.next().charAt(0);
-        graph.endingVertex = scanner.next().charAt(0);
+        
+        graph.startingVertex = 'c';  
+        boolean allVisited = false;  // A variable to check if all nodes have been reached.
 
-        graph.findNewConnections();
+        // We check the reachability of each node by running BFS for all vertexes
+        for (char start = 'a'; start < 'a' + numberOfLandmarks; start++) {
+        	
+            graph.bfs(graph, start); 
+
+            boolean visitedAll = true;
+            
+            for (char node = 'a'; node < 'a' + numberOfLandmarks; node++) {
+            	
+                if (graph.distTo[node - 'a'] == -1) { 
+                	
+                    visitedAll = false;  
+                    break;
+                    
+                }
+            }
+
+            if (visitedAll) {  
+            	
+                allVisited = true;  
+                break;
+                
+            }
+        }
+
+        
+        if (allVisited) {
+        	// We run BFS starting from vertex ‘c’
+            for (char start = 'c'; start < 'a' + numberOfLandmarks; start++) {
+            	
+                graph.bfs(graph, start); 
+
+            	// We obtain path information by reaching all nodes
+                for (char node = 'a'; node < 'a' + numberOfLandmarks; node++) {
+                	
+                    if (graph.distTo[node - 'a'] != -1) {  
+                    	
+                        List<Character> path = graph.getPath(start, node);  
+                        
+                        if (path.size() == numberOfLandmarks) {  
+                        	
+                            System.out.println(graph.distTo[node - 'a']);  
+                            printPath(path);  
+                            System.out.println();  
+                            return;  
+                            
+                        }
+                    }
+                }
+            }
+        } else {
+            System.out.println(-1);  // If all nodes are not reached, we print -1
+        }
+
         scanner.close();
     }
-}
+	}

@@ -4,5 +4,5 @@
 /**
  * 
  */
-module Homework1Q1 {
+module Homework1Q2 {
 }
